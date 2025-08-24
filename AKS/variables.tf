@@ -68,12 +68,29 @@ variable "create_acr" {
 
 variable "acr" {
   type = object({
-    name                          = string
-    private_dns_zone_resource_ids = set(string)
-    subnet_resource_id            = string
-    zone_redundancy_enabled       = optional(bool)
+    name                                   = optional(string,null)
+    customer_managed_key                   = optional(any)
+    diagnostic_settings                    = optional(any)
+    enable_telemetry                       = optional(bool,false)
+    enable_trust_policy                    = optional(bool,true)
+    lock                                   = optional(any,null)
+    managed_identities                     = optional(any)
+    private_endpoints                      = optional(any)
+    private_endpoints_manage_dns_zone_group = optional(bool)
+    role_assignments                       = optional(any)
+    admin_enabled                          = optional(bool,false)
+    anonymous_pull_enabled                 = optional(bool,false)
+    data_endpoint_enabled                  = optional(bool,false)
+    export_policy_enabled                  = optional(bool,true)
+    georeplications                        = optional(any)
+    network_rule_bypass_option             = optional(string)
+    network_rule_set                       = optional(any)
+    public_network_access_enabled          = optional(bool,false)
+    quarantine_policy_enabled              = optional(bool,false)
+    retention_policy_in_days               = optional(number)
+    sku                                    = optional(string)
+    zone_redundancy_enabled                = optional(bool,true)
   })
-  default     = null
   description = "(Optional) Parameters for the Azure Container Registry to use with the Kubernetes Cluster."
 }
 
