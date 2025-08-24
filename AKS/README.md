@@ -1,183 +1,123 @@
 # Module: Azure Container Registry (ACR)
 
-This Terraform module provisions an Azure Container Registry (ACR) using the official AVM module. It encapsulates best practices for secure, scalable, and manageable container registry deployments in Azure.
+This Terraform module provisions an Azure Kubernetes Service (AKS) cluster following best practices for secure, scalable, and manageable deployments in Azure.
 
 ## Input Variables
 
-| Name                         | Type    | Description                                                                                                    | Default    | Required |
-|------------------------------|---------|----------------------------------------------------------------------------------------------------------------|------------|----------|
-| name                         | string  | The name of the Container Registry. Must be 5-50 alphanumeric characters.                                      | n/a        | yes      |
-| environment                  | string  | The environment for the resource (e.g., dev, test, prod).                                                      | n/a        | yes      |
-| additional_context           | string  | Additional context to append to the resource name for uniqueness.                                              | "01"       | no       |
-| CostCenter                   | string  | (Optional) The cost center associated with the resources. Must start with 'scs' and up to 7 digits.            | n/a        | yes      |
-| Owner                        | string  | (Optional) The owner of the resources.                                                                         | n/a        | yes      |
-| Migration                    | string  | (Optional) Migration information. Allowed values: 'yes' or 'no'.                                               | n/a        | yes      |
-| location                     | string  | The Azure region where the Container Registry will be deployed.                                                | "we"       | no       |
-| resource_group_name          | string  | The resource group where the resources will be deployed.                                                       | n/a        | yes      |
-| customer_managed_key         | object  | Customer-managed key for encryption. See variables.tf for structure.                                           | null       | no       |
-| diagnostic_settings          | map     | Diagnostic settings for monitoring and logging.                                                                | {}         | no       |
-| enable_telemetry             | bool    | Enable telemetry for the module.                                                                               | false      | no       |
-| enable_trust_policy          | bool    | Specifies whether trust policy is enabled for this Container Registry.                                         | true       | no       |
-| lock                         | object  | Resource lock configuration. Possible values for kind: "CanNotDelete", "ReadOnly".                             | null       | no       |
-| managed_identities           | object  | Managed identity configuration.                                                                                | {}         | no       |
-| private_endpoints            | map     | Private endpoint configuration.                                                                                | {}         | no       |
-| private_endpoints_manage_dns_zone_group | bool | Manage private DNS zone groups for private endpoints.                                                          | true       | no       |
-| role_assignments             | map     | Role assignments for the registry.                                                                             | {}         | no       |
-| tags                         | map     | Tags to assign to the registry.                                                                                | null       | no       |
-| admin_enabled                | bool    | Specifies whether the admin user is enabled.                                                                   | false      | no       |
-| anonymous_pull_enabled       | bool    | Specifies whether anonymous (unauthenticated) pull access is allowed. Requires Standard or Premium SKU.        | false      | no       |
-| data_endpoint_enabled        | bool    | Specifies whether to enable dedicated data endpoints. Requires Premium SKU.                                    | false      | no       |
-| export_policy_enabled        | bool    | Specifies whether export policy is enabled. Requires public_network_access_enabled = false to disable.         | true       | no       |
-| georeplications              | list    | List of geo-replication configurations.                                                                        | []         | no       |
-| network_rule_bypass_option   | string  | Allow trusted Azure services access. Possible values: "AzureServices", "None".                                 | "AzureServices" | no   |
-| network_rule_set             | object  | Network rule set configuration. Requires Premium SKU.                                                          | null       | no       |
-| public_network_access_enabled| bool    | Specifies whether public access is permitted.                                                                  | false      | no       |
-| quarantine_policy_enabled    | bool    | Specifies whether the quarantine policy is enabled.                                                            | false      | no       |
-| retention_policy_in_days     | number  | Retention policy for untagged manifests (in days).                                                             | 7          | no       |
-| sku                          | string  | The SKU name of the Container Registry. Possible values: "Basic", "Standard", "Premium".                       | "Premium"  | no       |
-| zone_redundancy_enabled      | bool    | Specifies whether zone redundancy is enabled.                                                                  | true       | no       |
+| Name                        | Type      | Description                                                                                                                        | Default                | Required |
+|-----------------------------|-----------|------------------------------------------------------------------------------------------------------------------------------------|------------------------|----------|
+| name                        | string    | The name for the AKS resources created in the specified Azure Resource Group.                                                      | n/a                    | yes      |
+| uami_name                   | string    | (Optional) The name of the User Assigned Managed Identity (UAMI) to be used with the AKS cluster.                                  | null                   | no       |
+| environment                 | string    | The environment for the AKS deployment. Allowed: `prod`, `nonprod`.                                                               | n/a                    | yes      |
+| additional_context          | string    | (Optional) A string used as the last digit in the AKS cluster name for additional context or metadata.                             | "01"                   | no       |
+| CostCenter                  | string    | (Optional) The cost center associated with the AKS resources. Must start with 'scs' followed by up to 7 digits.                   | n/a                    | yes      |
+| Owner                       | string    | (Optional) The owner of the AKS resources.                                                                                        | n/a                    | yes      |
+| Migration                   | string    | (Optional) Migration information for the AKS resources. Allowed: `yes`, `no`.                                                     | n/a                    | yes      |
+| acr                         | object    | (Optional) Parameters for the Azure Container Registry to use with the Kubernetes Cluster.                                         | null                   | no       |
+| location                    | string    | The Azure region where the resources should be deployed.                                                                          | n/a                    | yes      |
+| network                     | object    | Values for the networking configuration of the AKS cluster.                                                                       | n/a                    | yes      |
+| resource_group_name         | string    | The resource group where the resources will be deployed.                                                                          | n/a                    | yes      |
+| agents_tags                 | map(string)| (Optional) A mapping of tags to assign to the Node Pool.                                                                         | {}                     | no       |
+| default_node_pool_vm_sku    | string    | The VM SKU to use for the default node pool.                                                                                      | "Standard_D4d_v5"      | no       |
+| enable_telemetry            | bool      | Enable telemetry for the module.                                                                                                  | true                   | no       |
+| kubernetes_version          | string    | Specify which Kubernetes release to use. Specify only minor version, such as '1.28'.                                              | null                   | no       |
+| lock                        | object    | Controls the Resource Lock configuration for this resource. See below for structure.                                               | null                   | no       |
+| managed_identities          | object    | Controls the Managed Identity configuration on this resource. See below for structure.                                             | {}                     | no       |
+| monitor_metrics             | object    | (Optional) Specifies a Prometheus add-on profile for the Kubernetes Cluster.                                                      | null                   | no       |
+| network_policy              | string    | (Optional) Sets up network policy to be used with Azure CNI. Allowed: `calico`, `cilium`.                                         | "cilium"               | no       |
+| node_labels                 | map(string)| (Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool.                                         | {}                     | no       |
+| node_pools                  | map(object)| A map of node pools to create and attach to the Kubernetes cluster. See below for structure.                                      | {}                     | no       |
+| orchestrator_version        | string    | Specify which Kubernetes release to use. Specify only minor version, such as '1.28'.                                              | null                   | no       |
+| os_disk_type                | string    | (Optional) Specifies the OS Disk Type used by the agent pool. Allowed: `Managed`, `Ephemeral`.                                    | "Managed"              | no       |
+| os_sku                      | string    | (Optional) Specifies the OS SKU used by the agent pool. Allowed: `Ubuntu`, `AzureLinux`.                                          | "AzureLinux"           | no       |
+| outbound_type               | string    | (Optional) Specifies the outbound type for cluster egress. Allowed: `loadBalancer`, `userDefinedRouting`, `managedNATGateway`, `userAssignedNATGateway`. | "loadBalancer" | no       |
+| private_dns_zone_id         | string    | (Optional) The ID of Private DNS Zone to delegate to this Cluster.                                                                | null                   | no       |
+| private_dns_zone_id_enabled | bool      | (Optional) Enable private DNS zone integration for the AKS cluster.                                                               | false                  | no       |
+| rbac_aad_admin_group_object_ids | list(string) | Object ID of groups with admin access.                                                                                       | null                   | no       |
+| rbac_aad_azure_rbac_enabled | bool      | (Optional) Is Role Based Access Control based on Azure AD enabled?                                                                | null                   | no       |
+| rbac_aad_tenant_id          | string    | (Optional) The Tenant ID used for Azure Active Directory Application.                                                             | null                   | no       |
+| tags                        | map(string)| (Optional) Tags of the resource.                                                                                                 | null                   | no       |
+
+**Note:**  
+- Refer to `variables.tf` for full details, validation rules, and nested object structures.
+- See inline comments in the variables for additional constraints and example input structures.
+- Some objects (e.g., `lock`, `managed_identities`, `node_pools`, `network`) have nested attributes; see `variables.tf` for their schemas.
+- Naming and value constraints are enforced via Terraform validation blocks.
+- For more information on AKS naming rules, see [AKS API documentation](https://learn.microsoft.com/en-us/rest/api/aks/managed-clusters/create-or-update?view=rest-aks-2023-10-01&tabs=HTTP).
 
 > **Note:** Refer to `variables.tf` for full details, validation rules, and nested object structures.
 
-## Output Values
-
-| Name           | Description                                         |
-|----------------|-----------------------------------------------------|
-| name           | The name of the parent resource.                    |
-| resource       | The full output object for the resource.            |
-| resource_id    | The resource ID for the parent resource.            |
-
-**Note:**  
-- Output values are defined in `outputs.tf` and expose key attributes for use in other modules or root configurations.
-- The `resource` output provides the complete set of attributes returned by the AVM module for advanced use cases.
-
-## Resources
-
-This module manages the following resources (via the AVM module):
-
-- **azurerm_container_registry**: The main Azure Container Registry resource.
-- **azurerm_private_endpoint**: Private endpoint(s) for secure access (if configured).
-- **azurerm_role_assignment**: Role assignments for access control (if configured).
-- **azurerm_monitor_diagnostic_setting**: Diagnostic settings for monitoring (if configured).
-
-## File Structure
-
-```
-.
-├── main.tf         # Core resource definitions (module block)
-├── variables.tf    # Input variable declarations
-├── outputs.tf      # Output value definitions
-├── README.md       # Module documentation
-└── ...             # Additional supporting files
-```
-
 ## Example Usage
+```hcl
+# main.tf
+
+module "aks" {
+    source                      = "git::https://github.com/slopted/Sartorius-tf-modules.git//AKS"
+    name                        = var.name
+    uami_name                   = var.uami_name
+    environment                 = var.environment
+    additional_context          = var.additional_context
+    CostCenter                  = var.CostCenter
+    Owner                       = var.Owner
+    Migration                   = var.Migration
+    location                    = var.location
+    resource_group_name         = var.resource_group_name
+    enable_telemetry            = var.enable_telemetry
+    kubernetes_version          = var.kubernetes_version
+    network_policy              = var.network_policy
+    os_disk_type                = var.os_disk_type
+    os_sku                      = var.os_sku
+    outbound_type               = var.outbound_type
+    private_dns_zone_id_enabled = var.private_dns_zone_id_enabled
+    private_dns_zone_id         = var.private_dns_zone_id
+    rbac_aad_tenant_id          = var.rbac_aad_tenant_id
+    tags                        = var.tags
+    acr                         = var.acr
+    network                     = var.network
+    managed_identities          = var.managed_identities
+    node_pools                  = var.node_pools
+}
+```
 
 ```hcl
-module "acr" {
-    source  = "git::https://github.com/slopted/Sartorius-tf-modules.git//ACR?ref=1.0.0"
+# example.tfvars
 
-    name                        = "myacrprod001"
-    location                    = "westeurope"
-    resource_group_name         = "rg-prod-containers-001"
-    sku                         = "Premium"
-    admin_enabled               = false
-    enable_trust_policy         = true
-    public_network_access_enabled = false
-    zone_redundancy_enabled     = true
-    retention_policy_in_days    = 14
+name                = "aks-prod"
+uami_name           = "az-uami-aks-prod-01"
+environment         = "prod"
+additional_context  = "01"
+CostCenter          = "scs1234567"
+Owner               = "jane.doe@example.com"
+Migration           = "no"
+location            = "westeurope"
+resource_group_name = "rg-aks-prod"
+enable_telemetry    = true
+kubernetes_version  = "1.30"
+network_policy      = "cilium"
+os_disk_type        = "Managed"
+os_sku              = "Ubuntu"
+outbound_type       = "loadBalancer"
+private_dns_zone_id_enabled = false
+private_dns_zone_id = null
+rbac_aad_tenant_id  = null
+tags = {
+    environment = "prod"
+    project     = "aks"
+}
 
-    customer_managed_key = {
-        key_vault_id = "azurerm_key_vault.example.id"
-        key_name     = "acr-cmk"
-        key_version  = "1234567890abcdef"
-    }
+acr = {
+    name                          = "acrprod01"
+    subnet_resource_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-aks-prod/providers/Microsoft.Network/virtualNetworks/vnet-aks-prod/subnets/acr"
+    private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-aks-prod/providers/Microsoft.Network/privateDnsZones/privatelink.azurecr.io"]
+}
 
-    diagnostic_settings = {
-        log_analytics_workspace_id = "azurerm_log_analytics_workspace.example.id"
-        logs = [
-            {
-                category = "ContainerRegistryLoginEvents"
-                enabled  = true
-            },
-            {
-                category = "ContainerRegistryRepositoryEvents"
-                enabled  = true
-            }
-        ]
-    }
+network = {
+    node_subnet_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-aks-prod/providers/Microsoft.Network/virtualNetworks/vnet-aks-prod/subnets/aks"
+    pod_cidr       = "10.244.0.0/16"
+    service_cidr   = "10.0.0.0/16"
+}
 
-    enable_telemetry = false
-
-    lock = {
-        kind = "ReadOnly"
-    }
-
-    managed_identities = {
-        system_assigned = true
-        user_assigned   = ["azurerm_user_assigned_identity.example.id"]
-    }
-
-    private_endpoints = {
-        "acr-pe" = {
-            subnet_id = "azurerm_subnet.example.id"
-            private_dns_zone_ids = [
-                "azurerm_private_dns_zone.acr.id"
-            ]
-        }
-    }
-
-    private_endpoints_manage_dns_zone_group = true
-
-    role_assignments = {
-        "acr-push" = {
-            principal_id = "00000000-0000-0000-0000-000000000000"
-            role_definition_name = "AcrPush"
-        }
-    }
-
-    tags = {
-        environment = "production"
-        workload    = "containers"
-        CostCenter  = "scs1234567"
-        Owner       = "jane.doe@example.com"
-        Migration   = "no"
-    }
-
-    anonymous_pull_enabled     = false
-    data_endpoint_enabled      = true
-    export_policy_enabled      = true
-
-    georeplications = [
-        {
-            location                  = "northeurope"
-            zone_redundancy_enabled   = true
-            regional_endpoint_enabled = true
-            tags = {
-                environment = "production"
-                region      = "northeurope"
-            }
-        }
-    ]
-
-    network_rule_bypass_option = "AzureServices"
-
-    network_rule_set = {
-        default_action = "Deny"
-        ip_rules = [
-            {
-                action   = "Allow"
-                ip_range = "203.0.113.0/24"
-            }
-        ]
-        virtual_network_rules = [
-            {
-                action      = "Allow"
-                subnet_id   = "azurerm_subnet.example.id"
-            }
-        ]
-    }
-
-    quarantine_policy_enabled = false
-
-See the `examples/` directory for more comprehensive usage scenarios.
+managed_identities = {
+    user_assigned_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-aks-prod/providers/Microsoft.ManagedIdentity/userAssignedIdentities/az-uami-aks-prod-01"]
+}
+```
