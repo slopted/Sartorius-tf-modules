@@ -13,101 +13,77 @@ variable "name" {
   }
 }
 
-variable "environment" {
-    type        = string
-    description = "The environment for the AKS deployment (e.g., prod, nonprod)."
+variable "uami_name" {
+  type        = string
+  description = "(Optional) The name of the User Assigned Managed Identity (UAMI) to be used with the AKS cluster."
+  default     = null
+}
 
-    validation {
-        condition     = can(regex("^(prod|nonprod)$", var.environment))
-        error_message = "The environment must be either 'prod' or 'nonprod'."
-    }
+variable "environment" {
+  type        = string
+  description = "The environment for the AKS deployment (e.g., prod, nonprod)."
+
+  validation {
+    condition     = can(regex("^(prod|nonprod)$", var.environment))
+    error_message = "The environment must be either 'prod' or 'nonprod'."
+  }
 }
 
 variable "additional_context" {
-    type        = string
-    default     = "01"
-    description = "(Optional) A string used as the last digit in the AKS cluster name for additional context or metadata."
+  type        = string
+  default     = "01"
+  description = "(Optional) A string used as the last digit in the AKS cluster name for additional context or metadata."
 }
 
 variable "CostCenter" {
-    type        = string
-    description = "(Optional) The cost center associated with the AKS resources. Must start with 'scs' followed by up to 7 digits."
-    nullable    = false
-    validation {
-        condition     = can(regex("^scs\\d{1,7}$", var.CostCenter))
-        error_message = "The CostCenter must start with 'scs' followed by up to 7 digits (e.g., scs1234567)."
-    }
+  type        = string
+  description = "(Optional) The cost center associated with the AKS resources. Must start with 'scs' followed by up to 7 digits."
+  nullable    = false
+  validation {
+    condition     = can(regex("^scs\\d{1,7}$", var.CostCenter))
+    error_message = "The CostCenter must start with 'scs' followed by up to 7 digits (e.g., scs1234567)."
+  }
 }
 
 variable "Owner" {
-    type        = string
-    nullable    = false
-    description = "(Optional) The owner of the AKS resources."
+  type        = string
+  nullable    = false
+  description = "(Optional) The owner of the AKS resources."
 }
 
 variable "Migration" {
-    type        = string
-    nullable    = false
-    description = "(Optional) Migration information for the AKS resources. Allowed values: 'yes' or 'no'."
+  type        = string
+  nullable    = false
+  description = "(Optional) Migration information for the AKS resources. Allowed values: 'yes' or 'no'."
 
-    validation {
-        condition     = can(regex("^(yes|no)$", var.Migration))
-        error_message = "Migration must be either 'yes' or 'no'."
-    }
+  validation {
+    condition     = can(regex("^(yes|no)$", var.Migration))
+    error_message = "Migration must be either 'yes' or 'no'."
+  }
 }
 
 # ==========================================================================================
 #                         AZURE CONTAINER REGISTRY (ACR) VARIABLES
 # ==========================================================================================
 
-variable "create_acr" {
-    type        = bool
-    default     = false
-    description = "(Optional) Whether to create an Azure Container Registry (ACR) for the AKS cluster."
-}
-
 variable "acr" {
   type = object({
-    name                                   = optional(string,null)
-    customer_managed_key                   = optional(any)
-    diagnostic_settings                    = optional(any)
-    enable_telemetry                       = optional(bool,false)
-    enable_trust_policy                    = optional(bool,true)
-    lock                                   = optional(any,null)
-    managed_identities                     = optional(any)
-    private_endpoints                      = optional(any)
-    private_endpoints_manage_dns_zone_group = optional(bool)
-    role_assignments                       = optional(any)
-    admin_enabled                          = optional(bool,false)
-    anonymous_pull_enabled                 = optional(bool,false)
-    data_endpoint_enabled                  = optional(bool,false)
-    export_policy_enabled                  = optional(bool,true)
-    georeplications                        = optional(any)
-    network_rule_bypass_option             = optional(string)
-    network_rule_set                       = optional(any)
-    public_network_access_enabled          = optional(bool,false)
-    quarantine_policy_enabled              = optional(bool,false)
-    retention_policy_in_days               = optional(number)
-    sku                                    = optional(string)
-    zone_redundancy_enabled                = optional(bool,true)
+    name                          = optional(string, null)
+    subnet_resource_id            = optional(string, null)
+    private_dns_zone_resource_ids = optional(list(string), null)
   })
   description = "(Optional) Parameters for the Azure Container Registry to use with the Kubernetes Cluster."
 }
 
-
-
-
-
-
-
+# ==========================================================================================
+#                                   AKS VARIABLES
+# ==========================================================================================
 
 variable "location" {
   type        = string
   description = "The Azure region where the resources should be deployed."
   nullable    = false
 }
-
-
 
 variable "network" {
   type = object({
