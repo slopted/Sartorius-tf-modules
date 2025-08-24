@@ -23,7 +23,7 @@ module "avm-res-containerregistry-registry" {
   network_rule_set                        = var.network_rule_set
   public_network_access_enabled           = var.public_network_access_enabled
   quarantine_policy_enabled               = var.quarantine_policy_enabled
-  retention_policy_in_days                = var.retention_policy_in_days
+  retention_policy_in_days                = var.sku == "Premium" ? var.retention_policy_in_days : null
   sku                                     = var.sku
-  zone_redundancy_enabled                 = var.zone_redundancy_enabled
+  zone_redundancy_enabled                 = var.sku == "Premium" ? var.zone_redundancy_enabled : false
 }
